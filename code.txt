@@ -1,0 +1,62 @@
+# 符号追踪这个模块
+# Symbolic tracing frontend - captures the semantics of the module
+symbolic_traced : torch.fx.GraphModule = symbolic_trace(model, concrete_args=None)
+modules = dict(symbolic_traced.named_modules())
+input_tensor = []
+ShapeProp(symbolic_traced).propagate(torch.rand([1, 3, 144, 144]).to(torch.float32))
+
+nodes = list(symbolic_traced.graph.nodes)
+# self.input_layers = list()
+# self.output_layers = list()
+# self.layer_name_map = collections.OrderedDict()
+for node in nodes:
+    args = dict()
+    if node.op == "placeholder":
+        input_name = node.name
+        print(input_name)
+    elif node.op == "call_function":    
+        args = {'op_name': node.name,
+                'op_type': get_function_name(node.target),   
+                'input_param': [v.name for v in node.args],
+                'input_shape': node.args[0].meta["tensor_meta"].shape,
+                'ouput_shape': node.meta["tensor_meta"].shape,
+                }
+    elif node.op == "call_module":
+        module = modules[node.target]
+        if isinstance(module, nn.Conv2d):  
+            args = {'op_name': node.name,
+                    'op_type': 'Conv',
+                    'input_param': [v.name for v in node.args],
+                    'input_shape': node.args[0].meta["tensor_meta"].shape,
+                    'ouput_shape': node.meta["tensor_meta"].shape,
+                    'kernel_size': module.kernel_size,
+                    'stride': module.stride,
+                    'padding': module.padding,
+                    'dilation': module.dilation,
+                    'groups':module.groups,}
+            if args['groups'] != 1:
+                args['op_type'] = 'Depthwise_Conv'
+        elif isinstance(module, nn.AvgPool2d):
+            args = {'op_name': node.name,
+                    'op_type': 'Avg_Pool',
+                    'input_param': [v.name for v in node.args],
+                    'input_shape': node.args[0].meta["tensor_meta"].shape,
+                    'ouput_shape': node.meta["tensor_meta"].shape,
+                    'kernel_size': module.kernel_size,
+                    'stride': module.stride,
+                    'padding': module.padding,}
+        elif isinstance(module, nn.MaxPool2d):
+            args = {'op_name': node.name,
+                    'op_type': 'Max_Pool',
+                    'input_param': [v.name for v in node.args],
+                    'input_shape': node.args[0].meta["tensor_meta"].shape,
+                    'ouput_shape': node.meta["tensor_meta"].shape,
+                    'kernel_size': module.kernel_size,
+                    'stride': module.stride,
+                    'padding': module.padding,}
+    # print(node.name, node.target, node.args, node.op, node.meta["tensor_meta"].shape)
+    print(args)
+
+# 中间表示
+# High-level intermediate representation (IR) - Graph representation
+# print(symbolic_traced.graph)

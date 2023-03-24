@@ -1,0 +1,10 @@
+const int16_t height[10] =  {72,36,18,9,88,44,22,11,48,12};
+const int16_t IC[10] =  {48,48,96,192,24,48,96,192,32,120};
+const int16_t OC[10] =  {48,48,96,192,24,48,96,192,32,120};
+const int16_t OH[10] =  {36,18,9,5,44,22,11,6,24,6};
+const signed char CHWweight[1728];
+const int32_t offsetBias[192];
+const int32_t offsetRBias[192];
+const float scale[192];
+static signed char buffer[256932];
+static int16_t *sbuf = (int16_t *)&buffer[248832];

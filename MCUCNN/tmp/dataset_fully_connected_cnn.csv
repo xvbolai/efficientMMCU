@@ -1,0 +1,2 @@
+CNN,IH,IW,IC,OC,KH,KW
+SmallCifar,1,1,1024,10,1,1
